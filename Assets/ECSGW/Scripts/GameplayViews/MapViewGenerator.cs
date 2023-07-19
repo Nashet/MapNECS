@@ -1,16 +1,20 @@
 using Nashet.Controllers;
+using Nashet.MapMeshes;
+using Nashet.MarchingSquares;
+using Nashet.Utils;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Nashet.GameplayView
 {
 	public class MapViewGenerator : MonoBehaviour
 	{
-		[SerializeField] GameObject cellViewPrefab;
-
 		[SerializeField] MapView mapView;
+		[SerializeField] Material shoreMaterial;
+		[SerializeField] GameObject r3DProvinceTextPrefab;
+
 		private IMapController mapController;
+		private int cellMultiplier = 1;
 
 		private IEnumerator Start()
 		{
@@ -38,31 +42,79 @@ namespace Nashet.GameplayView
 
 		private void CreateMap()
 		{
-			var cellViewList = new List<List<CellView>>();
-			var xOffset = mapController.GetSize().x / 2f - 0.5f;
-			var yOffset = mapController.GetSize().y / 2f - 0.5f;
+			var mapTexture = PprepareTexture(null);
+			UpdateStatus("Crating map mesh data..");
 
-			for (int y = 0; y < mapController.GetSize().y; y++)
+			var grid = new VoxelGrid(mapTexture.getWidth(), mapTexture.getHeight(), cellMultiplier * mapTexture.getWidth(), mapTexture);
+
+			//UpdateStatus("Creating economic data..");
+			//you can create world data here
+
+			UpdateStatus("Finishing with non-unity loading..");
+
+			foreach (var province in mapTexture.AllUniqueColors3())
 			{
-				var newRow = new List<CellView>();
-				cellViewList.Add(newRow);
-				for (int x = 0; x < mapController.GetSize().x; x++)
+				var mesh = grid.getMesh(province.ToInt(), out var borderMeshes);
+
+				//if (!IsForDeletion)
 				{
-					//todo Should be in controller - view vs view
-					var cell = Instantiate(cellViewPrefab, new Vector3((x - xOffset), (y - yOffset), 0), Quaternion.identity);
-					cell.transform.parent = mapView.transform;
-					cell.name = $"CellView({x},{y})";
+					//province.
+					var provinceMesh = new ProvinceMesh(province.ToInt(), mesh, borderMeshes, province, this.transform, shoreMaterial);
 
-					var cellView = cell.GetComponent<CellView>();
+					var label = MapTextLabel.CreateMapTextLabel(r3DProvinceTextPrefab, province.ToString(), Color.black, provinceMesh.Position);
+					label.transform.SetParent(provinceMesh.GameObject.transform, false);
 
-					var sprite = mapController.GetSprite(x, y);
-
-					cellView.SetUp(sprite, x, y);// todo view should not change other view. Or is it a controller actually??
-					newRow.Add(cellView);
 				}
+				//province.SetNeighbors(mesh, borderMeshes);
 			}
-			mapView.SetUp(cellViewList);
-			mapController.CreateUnits(); // may be  put it in first tic? todo
+
+
+			//Country.setMaterial();
+
+			//todo put it in some other file. World?
+			//AddRivers();
+			//foreach (var province in World.AllProvinces)
+			//{
+			//	province.SetBorderMaterials();
+			//}
+		}
+
+		private void UpdateStatus(string v)
+		{
+
+		}
+
+		private MyTexture PprepareTexture(Texture2D mapImage)
+		{
+			MyTexture mapTexture;
+
+			if (mapImage == null)
+			{
+				int mapSize;
+				int width;
+				//if (devMode)
+				{
+					mapSize = 20000;
+					width = 150 + Rand.Get.Next(60);
+				}
+				//else
+				//{
+				//	mapSize = 40000;
+				//	width = 250 + Rand.Get.Next(40);
+				//}
+				//mapSize = 160000;
+				//width = 420;
+				int amountOfProvince = mapSize / 140 + Rand.Get.Next(5);
+				// amountOfProvince = 136;
+				var map = new MapTextureGenerator();
+				mapTexture = map.generateMapImage(width, mapSize / width, amountOfProvince);
+			}
+			else
+			{
+				//Texture2D mapImage = Resources.Load("provinces", typeof(Texture2D)) as Texture2D; ///texture;
+				mapTexture = new MyTexture(mapImage);
+			}
+			return mapTexture; ;
 		}
 	}
 }

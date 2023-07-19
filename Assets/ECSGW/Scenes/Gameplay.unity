@@ -393,10 +393,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 709745185}
-  - component: {fileID: 709745184}
   - component: {fileID: 709745183}
   - component: {fileID: 709745186}
   - component: {fileID: 709745187}
+  - component: {fileID: 709745188}
   m_Layer: 0
   m_Name: MapView
   m_TagString: Untagged
@@ -417,20 +417,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   unitPrefab: {fileID: 7239387466099569861, guid: 09620b2a571474d4cad87a8cbc1ea089, type: 3}
---- !u!114 &709745184
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 709745182}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4430736e90015eb4d8c0f9302fa0c14c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cellViewPrefab: {fileID: 3234964164342568901, guid: c35965897f25f5f4db162007d5490f7b, type: 3}
-  mapView: {fileID: 709745183}
 --- !u!4 &709745185
 Transform:
   m_ObjectHideFlags: 0
@@ -470,6 +456,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7dc5cb582a1ee94498e57815a471dd27, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &709745188
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 709745182}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4430736e90015eb4d8c0f9302fa0c14c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mapView: {fileID: 709745183}
+  shoreMaterial: {fileID: 2100000, guid: d160a04a1f7be1744bb883a2f7e80a36, type: 2}
+  r3DProvinceTextPrefab: {fileID: 1000013302798520, guid: ef9997a1e03c0eb4bb7d2c1da0a6d3ca, type: 3}
 --- !u!1 &822431839
 GameObject:
   m_ObjectHideFlags: 0
@@ -565,7 +566,7 @@ SpriteRenderer:
   m_Size: {x: 1.28, y: 1.28}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!1 &1177352373
@@ -773,7 +774,7 @@ MonoBehaviour:
   mapView: {fileID: 709745183}
   mapViewSound: {fileID: 1715771896}
   mapViewClicker: {fileID: 709745186}
-  mapViewGenerator: {fileID: 709745184}
+  mapViewGenerator: {fileID: 709745188}
   debugClicker: {fileID: 709745187}
   selectedUnitView: {fileID: 822431840}
 --- !u!114 &1999352549
