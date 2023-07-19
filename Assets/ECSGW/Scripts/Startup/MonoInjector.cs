@@ -40,9 +40,7 @@ namespace Nashet.Initialization
 
 			mapViewClicker.CellClicked += mapController.HandleCellClicked;
 			debugClicker.SimulateStepHappened += mapController.SimulateOneStep;//TODO its better to subscribe inside controller
-
-
-			selectedUnitView.Subscribe(mapController);
+			
 
 			var scoresController = new ScoresController(scoresView);//new ScoresModel()
 			scoresController.Subscribe(mapController);
