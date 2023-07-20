@@ -13,7 +13,6 @@ namespace Nashet.Initialization
 		[SerializeField] ECSRunner ECSRunner;
 		[SerializeField] MapView mapView;
 		[SerializeField] MapViewSound mapViewSound;
-		[SerializeField] MapViewClicker mapViewClicker;
 		[SerializeField] MapViewGenerator mapViewGenerator;
 		[SerializeField] DebugClicker debugClicker;
 		[SerializeField] IScoresView scoresView;
@@ -33,20 +32,16 @@ namespace Nashet.Initialization
 
 			mapViewGenerator.Subscribe(mapController);
 			mapView.Subscribe(mapController);
-			
+			mapController.DelMe();
 
 			new SoundController(mapViewSound);
 
-
-			mapViewClicker.CellClicked += mapController.HandleCellClicked;
 			debugClicker.SimulateStepHappened += mapController.SimulateOneStep;//TODO its better to subscribe inside controller
-			
+
 
 			var scoresController = new ScoresController(scoresView);//new ScoresModel()
 			scoresController.Subscribe(mapController);
 			//scoresView.Subscribe(scoresController);
 		}
-
-
 	}
 }
