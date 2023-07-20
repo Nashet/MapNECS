@@ -1,8 +1,9 @@
+using Leopotam.EcsLite;
 using Nashet.Controllers;
+using Nashet.ECS;
 using Nashet.MapMeshes;
-using Nashet.MarchingSquares;
-using Nashet.Utils;
-using System.Collections;
+using Nashet.MeshData;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Nashet.GameplayView
@@ -14,22 +15,58 @@ namespace Nashet.GameplayView
 		[SerializeField] GameObject r3DProvinceTextPrefab;
 
 		private IMapController mapController;
-		private int cellMultiplier = 1;
 
-		private IEnumerator Start()
+
+		private void Start()
 		{
-			yield return new WaitWhile(() => mapController == null || !mapController.IsReady);
-			GenerateView();
+			//yield return new WaitWhile(() => mapController == null || !mapController.IsReady);
+			//GenerateView();
 		}
 
-		private void GenerateView()
+		public void GenerateView(EcsWorld world, Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>> dict)
 		{
-			CreateMap();
+			UpdateStatus("Crating map mesh data..");
+
+			var provinceFilter = world.Filter<ProvinceComponent>().End();
+			var provinces = world.GetPool<ProvinceComponent>();
+
+			foreach (var province in provinceFilter)
+			{
+				ref var component = ref provinces.Get(province);
+				
+				//if (!IsForDeletion)
+				{
+					var provinceMesh = new ProvinceMesh(component.Id, dict[component.Id].Key, dict[component.Id].Value, Color.yellow, this.transform, shoreMaterial);
+
+					var label = MapTextLabel.CreateMapTextLabel(r3DProvinceTextPrefab, component.name, Color.black, provinceMesh.Position); //walletComponent.name
+					label.transform.SetParent(provinceMesh.GameObject.transform, false);
+				}
+			}
+
+			//UpdateStatus("Creating economic data..");
+			//you can create world data here
+
+			UpdateStatus("Finishing with non-unity loading..");
+
+
+			//Country.setMaterial();
+
+			
+			//foreach (var province in World.AllProvinces)
+			//{
+			//	province.SetBorderMaterials();
+			//}
 		}
 
 		public void Subscribe(IMapController mapController)
 		{
 			this.mapController = mapController;
+			mapController.WorldGenerated += WorldGeneratedHandler;
+		}
+
+		private void WorldGeneratedHandler(EcsWorld world, Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>> dict)
+		{
+			GenerateView(world, dict);
 		}
 
 		private void OnDestroy()
@@ -40,81 +77,9 @@ namespace Nashet.GameplayView
 			}
 		}
 
-		private void CreateMap()
-		{
-			var mapTexture = PprepareTexture(null);
-			UpdateStatus("Crating map mesh data..");
-
-			var grid = new VoxelGrid(mapTexture.getWidth(), mapTexture.getHeight(), cellMultiplier * mapTexture.getWidth(), mapTexture);
-
-			//UpdateStatus("Creating economic data..");
-			//you can create world data here
-
-			UpdateStatus("Finishing with non-unity loading..");
-
-			foreach (var province in mapTexture.AllUniqueColors3())
-			{
-				var mesh = grid.getMesh(province.ToInt(), out var borderMeshes);
-
-				//if (!IsForDeletion)
-				{
-					//province.
-					var provinceMesh = new ProvinceMesh(province.ToInt(), mesh, borderMeshes, province, this.transform, shoreMaterial);
-
-					var label = MapTextLabel.CreateMapTextLabel(r3DProvinceTextPrefab, province.ToString(), Color.black, provinceMesh.Position);
-					label.transform.SetParent(provinceMesh.GameObject.transform, false);
-
-				}
-				//province.SetNeighbors(mesh, borderMeshes);
-			}
-
-
-			//Country.setMaterial();
-
-			//todo put it in some other file. World?
-			//AddRivers();
-			//foreach (var province in World.AllProvinces)
-			//{
-			//	province.SetBorderMaterials();
-			//}
-		}
-
 		private void UpdateStatus(string v)
 		{
 
-		}
-
-		private MyTexture PprepareTexture(Texture2D mapImage)
-		{
-			MyTexture mapTexture;
-
-			if (mapImage == null)
-			{
-				int mapSize;
-				int width;
-				//if (devMode)
-				{
-					mapSize = 20000;
-					width = 150 + Rand.Get.Next(60);
-				}
-				//else
-				//{
-				//	mapSize = 40000;
-				//	width = 250 + Rand.Get.Next(40);
-				//}
-				//mapSize = 160000;
-				//width = 420;
-				int amountOfProvince = mapSize / 140 + Rand.Get.Next(5);
-				// amountOfProvince = 136;
-				var map = new MapTextureGenerator();
-				mapTexture = map.generateMapImage(width, mapSize / width, amountOfProvince);
-			}
-			else
-			{
-				//Texture2D mapImage = Resources.Load("provinces", typeof(Texture2D)) as Texture2D; ///texture;
-				mapTexture = new MyTexture(mapImage);
-			}
-			return mapTexture; ;
 		}
 	}
 }

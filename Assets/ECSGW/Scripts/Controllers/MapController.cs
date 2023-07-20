@@ -1,6 +1,9 @@
 ﻿using Leopotam.EcsLite;
 using Nashet.Configs;
 using Nashet.ECS;
+using Nashet.MarchingSquares;
+using Nashet.MeshData;
+using Nashet.NameGeneration;
 using Nashet.Services;
 using Nashet.Utils;
 using System.Collections.Generic;
@@ -14,6 +17,8 @@ namespace Nashet.Controllers
 	public delegate void OnExplosionHappened(Vector2Int where, int amount);
 	public delegate void OnUnitAppeared(Vector2Int position, string unitType);
 	public delegate void OnUnitMoved(Vector2Int from, Vector2Int toPosition);
+
+	public delegate void OnWorldgenerated(EcsWorld world, Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>> dict);
 	public enum Direction { horizontal, vertical }
 
 	public class MapController : IMapController
@@ -24,23 +29,112 @@ namespace Nashet.Controllers
 		public event OnUnitClicked EmptyCellClicked;
 		public event OnWaypointsRefresh WaypointsRefresh;
 		public event OnUnitMoved UnitMoved;
+
+		public event OnWorldgenerated WorldGenerated;
 		public bool IsReady { get; private set; }
 
 		private readonly IConfigService configService;
 		private readonly MapComponent map;
 		private readonly EcsWorld world;
 		private EcsPackedEntity? previouslySelectedUnit;
+		private int cellMultiplier = 1;
 		private EcsPool<PositionComponent> positions;
 
 		public MapController(IConfigService configService, MapComponent map, EcsWorld world)
 		{
 			this.map = map;
 			this.world = world;
-
-			//map.ExplosionHappened += ExplosionHappenedHandler;
-			this.configService = configService;
 			positions = world.GetPool<PositionComponent>();
+			this.configService = configService;
+
 			IsReady = true;
+		}
+
+		public void DelMe()
+		{
+			var provinces = world.GetPool<ProvinceComponent>();
+			var mapTexture = PprepareTexture(null);
+			var colors = mapTexture.AllUniqueColors3();
+			var grid = new VoxelGrid(mapTexture.getWidth(), mapTexture.getHeight(), cellMultiplier * mapTexture.getWidth(), mapTexture);
+
+			var meshes = new Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>>();
+			var entityLookout = new Dictionary<int, EcsPackedEntity>();
+
+			//AddRivers();
+
+			foreach (var province in colors)
+			{
+				CreateProvince(provinces, grid, meshes, entityLookout, province.ToInt());
+			}
+
+			SetNeighbors(provinces, meshes, entityLookout);
+
+			WorldGenerated?.Invoke(world, meshes);
+		}
+
+		private void CreateProvince(EcsPool<ProvinceComponent> provinces, VoxelGrid grid, Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>> meshes, Dictionary<int, EcsPackedEntity> entityLookout, int Id)
+		{
+			var entity = world.NewEntity();
+			ref var component = ref entity.AddnSet(provinces);
+			component.Id = Id;
+			component.name = ProvinceNameGenerator.generateWord(6);
+			var meshStructure = grid.getMesh(component.Id, out var borderMeshes);
+
+
+			meshes.Add(component.Id, new KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>(meshStructure, borderMeshes));
+			entityLookout.Add(component.Id, world.PackEntity(entity));
+		}
+
+		private void SetNeighbors(EcsPool<ProvinceComponent> provinces, Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>> meshes, Dictionary<int, EcsPackedEntity> entityLookout)
+		{
+			var provinceFilter = world.Filter<ProvinceComponent>().End();
+			foreach (var province in provinceFilter)
+			{
+				ref var component = ref provinces.Get(province);
+				var borderMeshes = meshes[component.Id];
+
+				component.neighbors = new EcsPackedEntity[borderMeshes.Value.Count];
+				int i = 0;
+				foreach (var item in borderMeshes.Value.Keys)
+				{
+					component.neighbors[i] = entityLookout[item];
+					i++;
+				}
+			}
+		}
+
+		private MyTexture PprepareTexture(Texture2D mapImage)
+		{
+			MyTexture mapTexture;
+
+			if (mapImage == null)
+			{
+				int mapSize;
+				int width;
+				//if (devMode)
+				{
+					mapSize = 20000;
+					width = 150 + Rand.Get.Next(60);
+				}
+				//else
+				//{
+				//	mapSize = 40000;
+				//	width = 250 + Rand.Get.Next(40);
+				//}
+				//mapSize = 160000;
+				//width = 420;
+
+				int amountOfProvince = mapSize / 140 + Rand.Get.Next(5);
+				// amountOfProvince = 136;
+				var map = new MapTextureGenerator();
+				mapTexture = map.generateMapImage(width, mapSize / width, amountOfProvince);
+			}
+			else
+			{
+				//Texture2D mapImage = Resources.Load("provinces", typeof(Texture2D)) as Texture2D; ///texture;
+				mapTexture = new MyTexture(mapImage);
+			}
+			return mapTexture; ;
 		}
 
 		public void CreateUnits()
@@ -215,6 +309,7 @@ namespace Nashet.Controllers
 		event OnUnitAppeared UnitAppeared;
 		event OnWaypointsRefresh WaypointsRefresh;
 		event OnUnitMoved UnitMoved;
+		event OnWorldgenerated WorldGenerated;
 
 		void SimulateOneStep();
 

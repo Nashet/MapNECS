@@ -40,7 +40,7 @@ namespace Nashet.ECS
 #if UNITY_EDITOR
 		// add debug systems for custom worlds here, for example:
 		// .Add (new Leopotam.EcsLite.UnityEditor.EcsWorldDebugSystem ("events"))
-		//.Add(new Leopotam.EcsLite.UnityEditor.EcsWorldDebugSystem(entityNameFormat: "000"))
+		.Add(new Leopotam.EcsLite.UnityEditor.EcsWorldDebugSystem(entityNameFormat: "000"))
 #endif
 		.Add(new BattleSystem())
 				;
