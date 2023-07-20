@@ -32,7 +32,7 @@ namespace Nashet.Initialization
 
 			mapViewGenerator.Subscribe(mapController);
 			mapView.Subscribe(mapController);
-			mapController.DelMe();
+			mapController.GenerateWorld();
 
 			new SoundController(mapViewSound);
 

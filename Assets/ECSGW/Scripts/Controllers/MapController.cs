@@ -9,6 +9,7 @@ using Nashet.Utils;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using System.Linq;
 
 namespace Nashet.Controllers
 {
@@ -50,34 +51,56 @@ namespace Nashet.Controllers
 			IsReady = true;
 		}
 
-		public void DelMe()
+		public void GenerateWorld()
 		{
+			HashSet<EcsPackedEntity> countriesLookup = CreateCoutries();
+
 			var provinces = world.GetPool<ProvinceComponent>();
 			var mapTexture = PprepareTexture(null);
 			var colors = mapTexture.AllUniqueColors3();
 			var grid = new VoxelGrid(mapTexture.getWidth(), mapTexture.getHeight(), cellMultiplier * mapTexture.getWidth(), mapTexture);
 
 			var meshes = new Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>>();
-			var entityLookout = new Dictionary<int, EcsPackedEntity>();
+			var provinceLookout = new Dictionary<int, EcsPackedEntity>();
 
 			//AddRivers();
 
 			foreach (var province in colors)
 			{
-				CreateProvince(provinces, grid, meshes, entityLookout, province.ToInt());
+				CreateProvince(provinces, grid, meshes, provinceLookout, province.ToInt(), countriesLookup);
 			}
 
-			SetNeighbors(provinces, meshes, entityLookout);
+			SetNeighbors(provinces, meshes, provinceLookout);
+
+
 
 			WorldGenerated?.Invoke(world, meshes);
 		}
 
-		private void CreateProvince(EcsPool<ProvinceComponent> provinces, VoxelGrid grid, Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>> meshes, Dictionary<int, EcsPackedEntity> entityLookout, int Id)
+		private HashSet<EcsPackedEntity> CreateCoutries()
+		{
+			var countriesLookup = new HashSet<EcsPackedEntity>();
+			var countries = world.GetPool<CountryComponent>();
+			for (int i = 0; i < 8; i++)
+			{
+				var entity = world.NewEntity();
+				ref var component = ref entity.AddnSet(countries);
+				component.name = CountryNameGenerator.generateCountryName();
+				component.color = ColorExtensions.getRandomColor();
+				countriesLookup.Add(world.PackEntity(entity));
+			}
+
+			return countriesLookup;
+		}
+
+		private void CreateProvince(EcsPool<ProvinceComponent> provinces, VoxelGrid grid, Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>> meshes, Dictionary<int, EcsPackedEntity> entityLookout, int Id, HashSet<EcsPackedEntity> d)
 		{
 			var entity = world.NewEntity();
 			ref var component = ref entity.AddnSet(provinces);
 			component.Id = Id;
 			component.name = ProvinceNameGenerator.generateWord(6);
+			var randomElement = Random.Range(0, d.Count - 1);
+			component.owner = d.ElementAt(randomElement);
 			var meshStructure = grid.getMesh(component.Id, out var borderMeshes);
 
 

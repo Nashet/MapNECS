@@ -3,6 +3,7 @@ using Nashet.Controllers;
 using Nashet.ECS;
 using Nashet.MapMeshes;
 using Nashet.MeshData;
+using Nashet.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -29,6 +30,7 @@ namespace Nashet.GameplayView
 
 			var provinceFilter = world.Filter<ProvinceComponent>().End();
 			var provinces = world.GetPool<ProvinceComponent>();
+			var countries = world.GetPool<CountryComponent>();
 
 			foreach (var province in provinceFilter)
 			{
@@ -36,7 +38,9 @@ namespace Nashet.GameplayView
 				
 				//if (!IsForDeletion)
 				{
-					var provinceMesh = new ProvinceMesh(component.Id, dict[component.Id].Key, dict[component.Id].Value, Color.yellow, this.transform, shoreMaterial);
+					component.owner.Unpack(world, out var owner);
+					var country = countries.Get(owner);
+					var provinceMesh = new ProvinceMesh(component.Id, dict[component.Id].Key, dict[component.Id].Value, country.color.getAlmostSameColor(), this.transform, shoreMaterial);
 
 					var label = MapTextLabel.CreateMapTextLabel(r3DProvinceTextPrefab, component.name, Color.black, provinceMesh.Position); //walletComponent.name
 					label.transform.SetParent(provinceMesh.GameObject.transform, false);

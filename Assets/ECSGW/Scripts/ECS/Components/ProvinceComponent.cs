@@ -7,5 +7,6 @@ namespace Nashet.ECS
 		public int Id;
 		public string name;
 		public EcsPackedEntity[] neighbors;
+		public EcsPackedEntity owner;
 	}
 }
