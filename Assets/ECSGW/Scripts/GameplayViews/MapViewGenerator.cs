@@ -1,6 +1,7 @@
 using Leopotam.EcsLite;
 using Nashet.Controllers;
 using Nashet.ECS;
+using Nashet.Map.Utils;
 using Nashet.MapMeshes;
 using Nashet.MeshData;
 using Nashet.Utils;

@@ -134,17 +134,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3087862da5cb4214dad99ef01d6cab78, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &709745186 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2356627313554578972, guid: 7edf1cefab429d54586f7959e4d546c7, type: 3}
-  m_PrefabInstance: {fileID: 2356627314255234110}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b045817f1c781fc45b4857fa25d90cc8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &709745187 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2356627313554578973, guid: 7edf1cefab429d54586f7959e4d546c7, type: 3}
@@ -176,6 +165,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 05a6469576cab5a429b38dd53107748c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1980029971 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4030940252782329559, guid: c32817a0c2f105645abfc7b31083be04, type: 3}
+  m_PrefabInstance: {fileID: 172754317561276836}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13fd656757bebdf46b5c4eb81a6a3b3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1001 &172754317561276836
@@ -352,6 +352,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 709745183}
     - target: {fileID: 2931028385504777412, guid: 70515e12943b2724f8bc15624cce4fed, type: 3}
+      propertyPath: cameraView
+      value: 
+      objectReference: {fileID: 1980029971}
+    - target: {fileID: 2931028385504777412, guid: 70515e12943b2724f8bc15624cce4fed, type: 3}
       propertyPath: debugClicker
       value: 
       objectReference: {fileID: 709745187}
@@ -362,7 +366,7 @@ PrefabInstance:
     - target: {fileID: 2931028385504777412, guid: 70515e12943b2724f8bc15624cce4fed, type: 3}
       propertyPath: mapViewClicker
       value: 
-      objectReference: {fileID: 709745186}
+      objectReference: {fileID: 0}
     - target: {fileID: 2931028385504777412, guid: 70515e12943b2724f8bc15624cce4fed, type: 3}
       propertyPath: mapViewGenerator
       value: 

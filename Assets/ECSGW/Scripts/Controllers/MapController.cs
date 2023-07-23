@@ -52,12 +52,13 @@ namespace Nashet.Controllers
 			IsReady = true;
 		}
 
-		public void GenerateWorld()
+		public Rect GenerateWorld()
 		{
 			HashSet<EcsPackedEntity> countriesLookup = CreateCoutries();
 
 			var provinces = world.GetPool<ProvinceComponent>();
 			var mapTexture = PprepareTexture(null);
+			var mapBorders = new Rect(0f, 0f, mapTexture.getWidth() * cellMultiplier, mapTexture.getHeight() * cellMultiplier);
 			var colors = mapTexture.AllUniqueColors3();
 			var grid = new VoxelGrid(mapTexture.getWidth(), mapTexture.getHeight(), cellMultiplier * mapTexture.getWidth(), mapTexture);
 
@@ -76,6 +77,8 @@ namespace Nashet.Controllers
 
 
 			WorldGenerated?.Invoke(world, meshes);
+
+			return mapBorders;
 		}
 
 		private HashSet<EcsPackedEntity> CreateCoutries()
