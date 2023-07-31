@@ -1,7 +1,7 @@
 ﻿using Nashet.Controllers;
 using Nashet.ECS;
 using Nashet.GameplayView;
-using Nashet.Map.GameplayView;
+using Nashet.Map.GameplayControllers;
 using Nashet.Services;
 using Nashet.Utils;
 using System.Collections;
@@ -18,7 +18,7 @@ namespace Nashet.Initialization
 		[SerializeField] DebugClicker debugClicker;
 		[SerializeField] IScoresView scoresView;
 		[SerializeField] SelectedUnitView selectedUnitView;
-		[SerializeField] CameraView cameraView;
+		[SerializeField] CameraController cameraController;
 
 		private IEnumerator Start()
 		{
@@ -35,7 +35,7 @@ namespace Nashet.Initialization
 			mapViewGenerator.Subscribe(mapController);
 			mapView.Subscribe(mapController);
 			var mapBorders = mapController.GenerateWorld();
-			cameraView.Set(mapBorders);
+			cameraController.Initialize(mapBorders);
 			new SoundController(mapViewSound);
 
 			debugClicker.SimulateStepHappened += mapController.SimulateOneStep;//TODO its better to subscribe inside controller

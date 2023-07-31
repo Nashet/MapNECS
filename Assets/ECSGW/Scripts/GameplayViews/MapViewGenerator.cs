@@ -42,8 +42,9 @@ namespace Nashet.GameplayView
 					component.owner.Unpack(world, out var owner);
 					var country = countries.Get(owner);
 					var provinceMesh = new ProvinceMesh(component.Id, dict[component.Id].Key, dict[component.Id].Value, country.color.getAlmostSameColor(), this.transform, shoreMaterial);
+					//SetInitialBorderMaterial(provinceMesh, dict[component.Id].Value);
 
-					var label = MapTextLabel.CreateMapTextLabel(r3DProvinceTextPrefab, component.name, Color.black, provinceMesh.Position); //walletComponent.name
+					var label = MapTextLabel.CreateMapTextLabel(r3DProvinceTextPrefab, provinceMesh.Position, component.name, Color.black); //walletComponent.name
 					label.transform.SetParent(provinceMesh.GameObject.transform, false);
 				}
 			}
