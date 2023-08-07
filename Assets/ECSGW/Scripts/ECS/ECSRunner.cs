@@ -11,23 +11,12 @@ namespace Nashet.ECS
 		private IEcsSystems initSystems;
 		private IEcsSystems updateSystems;
 		private IEcsSystems fixedUpdateSystems;
-		//[SerializeField] private ConfigurationSO configuration;
-		//[SerializeField] private Text coinCounter;
-		//[SerializeField] private GameObject gameOverPanel;
-		//[SerializeField] private GameObject playerWonPanel;
 
 		private void Start()
 		{
 			world = new EcsWorld();
-			//var gameData = new GameData();
 
-			//gameData.configuration = configuration;
-			//gameData.coinCounter = coinCounter;
-			//gameData.gameOverPanel = gameOverPanel;
-			//gameData.playerWonPanel = playerWonPanel;
-			//gameData.sceneService = Service<SceneService>.Get(true);
-
-			initSystems = new EcsSystems(world)//, gameData)
+			initSystems = new EcsSystems(world)
 				.Add(new InitSystem())
 
 				;
@@ -35,7 +24,7 @@ namespace Nashet.ECS
 			initSystems.Init();
 			IsReady = true;
 
-			updateSystems = new EcsSystems(world)//, gameData)	
+			updateSystems = new EcsSystems(world)
 
 #if UNITY_EDITOR
 		// add debug systems for custom worlds here, for example:
@@ -49,7 +38,7 @@ namespace Nashet.ECS
 
 			updateSystems.Run();
 
-			fixedUpdateSystems = new EcsSystems(world)// gameData)
+			fixedUpdateSystems = new EcsSystems(world)
 				;
 
 			fixedUpdateSystems.Init();

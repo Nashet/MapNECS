@@ -163,36 +163,33 @@ namespace Nashet.Controllers
 
 		private MyTexture PrepareTexture(Texture2D mapImage)
 		{
-			MyTexture mapTexture;
-
+			MyTexture texture = null;
 			if (mapImage == null)
 			{
-				int mapSize;
+				int height;
 				int width;
 				//if (devMode)
 				{
-					mapSize = 20000;
+					height = 130;
 					width = 150 + Rand.Get.Next(60);
 				}
 				//else
 				//{
-				//	mapSize = 40000;
+				//	height = 160;
 				//	width = 250 + Rand.Get.Next(40);
 				//}
-				//mapSize = 160000;
 				//width = 420;
-
-				int amountOfProvince = mapSize / 140 + Rand.Get.Next(5);
+				int amountOfProvince = width * height / 140 + Rand.Get.Next(5);
 				// amountOfProvince = 136;
-				var map = new MapTextureGenerator();
-				mapTexture = map.generateMapImage(width, mapSize / width, amountOfProvince);
+				var mapGenerator = new MapTextureGenerator();
+				texture = mapGenerator.generateMapImage(width, height, amountOfProvince);
 			}
 			else
 			{
 				//Texture2D mapImage = Resources.Load("provinces", typeof(Texture2D)) as Texture2D; ///texture;
-				mapTexture = new MyTexture(mapImage);
+				texture = new MyTexture(mapImage);
 			}
-			return mapTexture; ;
+			return texture;
 		}
 
 		public void CreateUnits()
