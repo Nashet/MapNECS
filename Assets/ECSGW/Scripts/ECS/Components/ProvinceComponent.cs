@@ -1,4 +1,5 @@
 ﻿using Leopotam.EcsLite;
+using Nashet.Utils;
 
 namespace Nashet.ECS
 {
@@ -6,7 +7,27 @@ namespace Nashet.ECS
 	{
 		public int Id;
 		public string name;
-		public EcsPackedEntity[] neighbors;
+		public EcsPackedEntity[] phisicalNeighbors;
+		//public EcsPackedEntity[] riverNeighbors;
+		//public EcsPackedEntity[] passableNeighbors;
+
 		public EcsPackedEntity owner;
+
+		public bool IsNeighbor(EcsWorld world, ProvinceComponent another)
+		{
+			var provinnces = world.GetPool<ProvinceComponent>();
+			for (int i = 0; i < phisicalNeighbors.Length; i++)
+			{
+				var neighbor = phisicalNeighbors[i].UnpackComponent(world, provinnces);
+				if (neighbor.Id == another.Id)
+					return true;
+			}
+			return false;
+		}
+
+		public bool IsRiverNeighbor(EcsWorld world, ProvinceComponent another)
+		{
+			return false;
+		}
 	}
 }

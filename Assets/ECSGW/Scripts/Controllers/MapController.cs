@@ -66,9 +66,11 @@ namespace Nashet.Controllers
 			var provinceLookout = new Dictionary<int, EcsPackedEntity>();
 
 			//AddRivers();
-
+			var ecxludedColors = mapTexture.GetColorsFromBorder();
 			foreach (var province in colors)
 			{
+				if (ecxludedColors.Contains(province))
+					continue;
 				CreateProvince(provinces, grid, meshes, provinceLookout, province.ToInt(), countriesLookup);
 			}
 
@@ -91,20 +93,23 @@ namespace Nashet.Controllers
 				ref var component = ref entity.AddnSet(countries);
 				component.name = CountryNameGenerator.generateCountryName();
 				component.color = ColorExtensions.getRandomColor();
+				component.Id = i;
 				countriesLookup.Add(world.PackEntity(entity));
 			}
 
 			return countriesLookup;
 		}
 
-		private void CreateProvince(EcsPool<ProvinceComponent> provinces, VoxelGrid grid, Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>> meshes, Dictionary<int, EcsPackedEntity> entityLookout, int Id, HashSet<EcsPackedEntity> d)
+		private void CreateProvince(EcsPool<ProvinceComponent> provinces, VoxelGrid grid,
+			Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>> meshes,
+			Dictionary<int, EcsPackedEntity> entityLookout, int Id, HashSet<EcsPackedEntity> countries)
 		{
 			var entity = world.NewEntity();
 			ref var component = ref entity.AddnSet(provinces);
 			component.Id = Id;
 			component.name = ProvinceNameGenerator.generateWord(6);
-			var randomElement = Random.Range(0, d.Count - 1);
-			component.owner = d.ElementAt(randomElement);
+			var randomElement = Random.Range(0, countries.Count - 1);
+			component.owner = countries.ElementAt(randomElement);
 			var meshStructure = grid.getMesh(component.Id, out var borderMeshes);
 
 
@@ -120,12 +125,23 @@ namespace Nashet.Controllers
 				ref var component = ref provinces.Get(province);
 				var borderMeshes = meshes[component.Id];
 
-				component.neighbors = new EcsPackedEntity[borderMeshes.Value.Count];
 				int i = 0;
 				foreach (var item in borderMeshes.Value.Keys)
 				{
-					component.neighbors[i] = entityLookout[item];
-					i++;
+					if (entityLookout.TryGetValue(item, out var lookOut))
+					{
+						i++;
+					}
+				}
+				component.phisicalNeighbors = new EcsPackedEntity[i]; //cause idk how much provinces was deleted
+				i = 0;
+				foreach (var item in borderMeshes.Value.Keys)
+				{
+					if (entityLookout.TryGetValue(item, out var lookOut))
+					{
+						component.phisicalNeighbors[i] = entityLookout[item];
+						i++;
+					}
 				}
 			}
 		}

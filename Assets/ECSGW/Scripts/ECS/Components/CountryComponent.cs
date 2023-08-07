@@ -6,5 +6,6 @@ namespace Nashet.ECS
 	{
 		public string name;
 		public Color color;
+		public int Id;
 	}
 }
