@@ -9,6 +9,8 @@ namespace Nashet.Configs
 	{
 		public int xSize = 30;
 		public int ySize = 20;
+		public int mountainsChance = 4;
+		public int lakeChance = 12;
 
 		public List<CellTypeConfig> AllowedCellTypes = new List<CellTypeConfig>();
 	}

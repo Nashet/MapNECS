@@ -41,6 +41,7 @@ namespace Nashet.Controllers
 		private EcsPackedEntity? previouslySelectedUnit;
 		private int cellMultiplier = 1;
 		private EcsPool<PositionComponent> positions;
+		private MapGenerationConfig config;
 
 		public MapController(IConfigService configService, MapComponent map, EcsWorld world)
 		{
@@ -48,7 +49,7 @@ namespace Nashet.Controllers
 			this.world = world;
 			positions = world.GetPool<PositionComponent>();
 			this.configService = configService;
-
+			config = configService.GetConfig<MapGenerationConfig>();
 			IsReady = true;
 		}
 
@@ -57,7 +58,7 @@ namespace Nashet.Controllers
 			HashSet<EcsPackedEntity> countriesLookup = CreateCoutries();
 
 			var provinces = world.GetPool<ProvinceComponent>();
-			var mapTexture = PprepareTexture(null);
+			var mapTexture = PrepareTexture(null);
 			var mapBorders = new Rect(0f, 0f, mapTexture.getWidth() * cellMultiplier, mapTexture.getHeight() * cellMultiplier);
 			var colors = mapTexture.AllUniqueColors3();
 			var grid = new VoxelGrid(mapTexture.getWidth(), mapTexture.getHeight(), cellMultiplier * mapTexture.getWidth(), mapTexture);
@@ -66,10 +67,12 @@ namespace Nashet.Controllers
 			var provinceLookout = new Dictionary<int, EcsPackedEntity>();
 
 			//AddRivers();
+			
 			var ecxludedColors = mapTexture.GetColorsFromBorder();
 			foreach (var province in colors)
 			{
-				if (ecxludedColors.Contains(province))
+				var deleteProvince = ecxludedColors.Contains(province) || Rand.Chance(config.lakeChance);
+				if (deleteProvince)
 					continue;
 				CreateProvince(provinces, grid, meshes, provinceLookout, province.ToInt(), countriesLookup);
 			}
@@ -108,6 +111,7 @@ namespace Nashet.Controllers
 			ref var component = ref entity.AddnSet(provinces);
 			component.Id = Id;
 			component.name = ProvinceNameGenerator.generateWord(6);
+			component.terrain = Rand.Chance(config.mountainsChance) ? TerrainType.Mountains : TerrainType.Plains;
 			var randomElement = Random.Range(0, countries.Count - 1);
 			component.owner = countries.ElementAt(randomElement);
 			var meshStructure = grid.getMesh(component.Id, out var borderMeshes);
@@ -135,6 +139,7 @@ namespace Nashet.Controllers
 				}
 				component.phisicalNeighbors = new EcsPackedEntity[i]; //cause idk how much provinces was deleted
 				i = 0;
+
 				foreach (var item in borderMeshes.Value.Keys)
 				{
 					if (entityLookout.TryGetValue(item, out var lookOut))
@@ -143,10 +148,20 @@ namespace Nashet.Controllers
 						i++;
 					}
 				}
+
+				var passableBorders = new List<EcsPackedEntity>();
+				foreach (var item in component.phisicalNeighbors)
+				{
+					var neighbor = item.UnpackComponent(world, provinces);
+					if (neighbor.terrain == TerrainType.Mountains && component.terrain == TerrainType.Mountains)
+						continue;
+					passableBorders.Add(item);
+				}
+				component.passableNeighbors = passableBorders.ToArray();
 			}
 		}
 
-		private MyTexture PprepareTexture(Texture2D mapImage)
+		private MyTexture PrepareTexture(Texture2D mapImage)
 		{
 			MyTexture mapTexture;
 
@@ -209,15 +224,12 @@ namespace Nashet.Controllers
 
 		public Sprite GetSprite(string cellType)
 		{
-			var config = configService.GetConfig<MapGenerationConfig>();
 			var cellTypeConfig = config.AllowedCellTypes.Find(x => x.Id == cellType);
 			return cellTypeConfig.sprite;
 		}
 
 		public Sprite GetSprite(int x, int y)
 		{
-			//todo fix taht
-			var config = configService.GetConfig<MapGenerationConfig>();
 			var cellType = map.GetElement(x, y);
 			var cellTypeConfig = config.AllowedCellTypes.Find(x => x.Id == cellType);
 			return cellTypeConfig.sprite;

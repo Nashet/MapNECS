@@ -88,11 +88,11 @@ namespace Nashet.GameplayView
 			}
 		}
 
-		private void SetInitialBorderMaterial(EcsWorld world, ProvinceComponent province, ProvinceMesh provinceMesh, EcsPackedEntity[] physicalNeighbors)
+		private void SetInitialBorderMaterial(EcsWorld world, ProvinceComponent province, ProvinceMesh provinceMesh, EcsPackedEntity[] phisicalNeighbors)
 		{
-			foreach (var neighbors in physicalNeighbors)
+			foreach (var neighborsItem in phisicalNeighbors)
 			{
-				var neighbor = neighbors.UnpackComponent(world, provinces);
+				var neighbor = neighborsItem.UnpackComponent(world, provinces);
 
 				if (neighbor.IsNeighbor(world, province)) //meaning if it has a passage
 				{
@@ -137,7 +137,7 @@ namespace Nashet.GameplayView
 		private void WorldGeneratedHandler(EcsWorld world, Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>> dict)
 		{
 			GenerateView(world, dict);
-		}		
+		}
 
 		/// <summary>
 		/// Suposed to update loading status...
@@ -145,7 +145,7 @@ namespace Nashet.GameplayView
 		/// <param name="v"></param>
 		private void UpdateStatus(string v)
 		{
-		
+
 		}
 	}
 }
