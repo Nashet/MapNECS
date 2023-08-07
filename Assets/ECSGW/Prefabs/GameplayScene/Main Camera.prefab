@@ -125,6 +125,9 @@ MonoBehaviour:
     height: 0
   allowed: 0
   cameraController: {fileID: 3923009203171205252}
+  minimalHeight: -10
+  maxHeight: -500
+  focusHeight: 0
 --- !u!114 &4178634975843289668
 MonoBehaviour:
   m_ObjectHideFlags: 0
