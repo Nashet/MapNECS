@@ -7,5 +7,10 @@ namespace Nashet.ECS
 		public string name;
 		public Color color;
 		public int Id;
+
+		public override string ToString()
+		{
+			return name;
+		}
 	}
 }

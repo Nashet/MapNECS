@@ -1,5 +1,6 @@
 ﻿using Leopotam.EcsLite;
 using System;
+using System.Collections;
 
 namespace Nashet.Utils
 {
@@ -43,6 +44,15 @@ namespace Nashet.Utils
 		{
 			packed.Unpack(world, out int entity);
 			return ref pool.Get(entity);
+		}
+
+		public static System.Collections.Generic.IEnumerable<int> GetEnumerable(this EcsFilter filter)
+		{
+			var enumerator = filter.GetEnumerator();
+			while (enumerator.MoveNext())
+			{
+				yield return enumerator.Current;
+			}
 		}
 	}
 }

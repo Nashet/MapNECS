@@ -6,11 +6,13 @@ using Nashet.MeshData;
 using Nashet.NameGeneration;
 using Nashet.Services;
 using Nashet.Utils;
+using Nashet.Map.Utils;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using System.Linq;
-using Nashet.Map.Utils;
+
+
 
 namespace Nashet.Controllers
 {
@@ -36,54 +38,77 @@ namespace Nashet.Controllers
 		public bool IsReady { get; private set; }
 
 		private readonly IConfigService configService;
-		private readonly MapComponent map;
-		private readonly EcsWorld world;
-		private EcsPackedEntity? previouslySelectedUnit;
-		private int cellMultiplier = 1;
-		private EcsPool<PositionComponent> positions;
 		private MapGenerationConfig config;
+
+		private readonly EcsWorld world;
+
+		private readonly MapComponent map;
+		private EcsPackedEntity? previouslySelectedUnit;
+		private EcsPool<PositionComponent> positions;
+		private EcsPool<ProvinceComponent> provinces;
+
+		private int cellMultiplier = 1;
 
 		public MapController(IConfigService configService, MapComponent map, EcsWorld world)
 		{
 			this.map = map;
 			this.world = world;
 			positions = world.GetPool<PositionComponent>();
+			provinces = world.GetPool<ProvinceComponent>();
 			this.configService = configService;
 			config = configService.GetConfig<MapGenerationConfig>();
 			IsReady = true;
 		}
 
 		public Rect GenerateWorld()
+		{			
+			Rect mapBorders;
+			Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>> meshes;
+			Dictionary<int, EcsPackedEntity> provinceLookout;
+			CreateProvinces(out mapBorders, out meshes, out provinceLookout);
+
+			SetNeighbors(provinces, meshes, provinceLookout);
+			//AddRivers();
+
+			WorldGenerated?.Invoke(world, meshes);
+
+			return mapBorders;
+		}
+
+		private void CreateProvinces(out Rect mapBorders, out Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>> meshes, out Dictionary<int, EcsPackedEntity> provinceLookout)
 		{
 			HashSet<EcsPackedEntity> countriesLookup = CreateCoutries();
 
-			var provinces = world.GetPool<ProvinceComponent>();
+			provinces = world.GetPool<ProvinceComponent>();
 			var mapTexture = PrepareTexture(null);
-			var mapBorders = new Rect(0f, 0f, mapTexture.getWidth() * cellMultiplier, mapTexture.getHeight() * cellMultiplier);
+			mapBorders = new Rect(0f, 0f, mapTexture.getWidth() * cellMultiplier, mapTexture.getHeight() * cellMultiplier);
 			var colors = mapTexture.AllUniqueColors3();
 			var grid = new VoxelGrid(mapTexture.getWidth(), mapTexture.getHeight(), cellMultiplier * mapTexture.getWidth(), mapTexture);
 
-			var meshes = new Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>>();
-			var provinceLookout = new Dictionary<int, EcsPackedEntity>();
+			meshes = new Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>>();
+			provinceLookout = new Dictionary<int, EcsPackedEntity>();
 
-			//AddRivers();
-			
 			var ecxludedColors = mapTexture.GetColorsFromBorder();
 			foreach (var province in colors)
 			{
 				var deleteProvince = ecxludedColors.Contains(province) || Rand.Chance(config.lakeChance);
 				if (deleteProvince)
 					continue;
-				CreateProvince(provinces, grid, meshes, provinceLookout, province.ToInt(), countriesLookup);
+				//CreateProvince(provinces, grid, meshes, provinceLookout, province.ToInt(), countriesLookup);
+				var entity = world.NewEntity();
+				ref var component = ref entity.AddnSet(provinces);
+				component.Id = province.ToInt();
+				component.name = ProvinceNameGenerator.generateWord(6);
+				component.terrain = Rand.Chance(config.mountainsChance) ? TerrainType.Mountains : TerrainType.Plains;
+				component.riverNeighbors = new List<EcsPackedEntity>();
+				var randomElement = Random.Range(0, countriesLookup.Count - 1);
+				component.owner = countriesLookup.ElementAt(randomElement);
+				var meshStructure = grid.getMesh(component.Id, out var borderMeshes);
+
+
+				meshes.Add(component.Id, new KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>(meshStructure, borderMeshes));
+				provinceLookout.Add(component.Id, world.PackEntity(entity));
 			}
-
-			SetNeighbors(provinces, meshes, provinceLookout);
-
-
-
-			WorldGenerated?.Invoke(world, meshes);
-
-			return mapBorders;
 		}
 
 		private HashSet<EcsPackedEntity> CreateCoutries()
@@ -103,27 +128,10 @@ namespace Nashet.Controllers
 			return countriesLookup;
 		}
 
-		private void CreateProvince(EcsPool<ProvinceComponent> provinces, VoxelGrid grid,
-			Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>> meshes,
-			Dictionary<int, EcsPackedEntity> entityLookout, int Id, HashSet<EcsPackedEntity> countries)
-		{
-			var entity = world.NewEntity();
-			ref var component = ref entity.AddnSet(provinces);
-			component.Id = Id;
-			component.name = ProvinceNameGenerator.generateWord(6);
-			component.terrain = Rand.Chance(config.mountainsChance) ? TerrainType.Mountains : TerrainType.Plains;
-			var randomElement = Random.Range(0, countries.Count - 1);
-			component.owner = countries.ElementAt(randomElement);
-			var meshStructure = grid.getMesh(component.Id, out var borderMeshes);
-
-
-			meshes.Add(component.Id, new KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>(meshStructure, borderMeshes));
-			entityLookout.Add(component.Id, world.PackEntity(entity));
-		}
-
 		private void SetNeighbors(EcsPool<ProvinceComponent> provinces, Dictionary<int, KeyValuePair<MeshStructure, Dictionary<int, MeshStructure>>> meshes, Dictionary<int, EcsPackedEntity> entityLookout)
 		{
 			var provinceFilter = world.Filter<ProvinceComponent>().End();
+
 			foreach (var province in provinceFilter)
 			{
 				ref var component = ref provinces.Get(province);
@@ -161,6 +169,128 @@ namespace Nashet.Controllers
 			}
 		}
 
+		private void AddRivers()
+		{
+			for (int i = 0; i < config.maxRiversAmount; i++)
+			{
+				var provinceFilter = world.Filter<ProvinceComponent>().End();
+				
+				var random = Random.Range(0, provinceFilter.GetEntitiesCount() - 1);
+
+				int? riverStart = provinceFilter.GetEnumerable().Where(x =>
+				{
+					var provinceComponent = provinces.Get(x);
+					return !provinceComponent.passableNeighbors.Any(y =>
+					{
+						var neighbor = y.UnpackComponent(world, provinces);
+						return neighbor.IsRiverNeighbor(world, provinceComponent);
+					});
+				}).ElementAtOrDefault(random);
+				//x.IsCoastal && 
+				//x.Terrain == Province.TerrainTypes.Mountains &&
+				if (riverStart == null)
+					continue;
+
+				ref var riverStartComponent = ref provinces.Get(riverStart.Value);
+
+				EcsPackedEntity? riverStart2 = riverStartComponent.passableNeighbors.Random();
+				//.Where(x => x.IsCoastal)
+				if (riverStart2 == null)
+					continue;
+
+				riverStart2.Value.Unpack(world, out var some);
+				ref var riverStartComponent2 = ref provinces.Get(some);
+
+				AddRiverBorder(riverStartComponent, riverStartComponent2, riverStart.Value, riverStart2.Value);
+			}
+		}
+
+		private void AddRiverBorder(ProvinceComponent beach1, ProvinceComponent beach2, int beach1Entity, EcsPackedEntity beach2Entity)
+		{
+			var logRivers = true;
+			if (beach1.terrain == TerrainType.Mountains && beach2.terrain == TerrainType.Mountains)
+			{
+				if (logRivers)
+					Debug.Log($"----river stoped because of mountain");
+				return;
+			}
+
+			var chanceToContinue = Rand.Get.Next(12);
+			if (chanceToContinue == 1)
+			{
+				if (logRivers)
+					Debug.Log($"----river stoped because its long enough");
+				return;
+			};
+
+			ProvinceComponent? beach3 = null;
+
+			var potentialBeaches = beach1.passableNeighbors.Where(x =>
+			{
+				var comp = x.UnpackComponent(world, provinces);
+				return comp.IsNeighbor(world, beach2);
+			}).ToList();
+			{
+
+				if (potentialBeaches.Count == 1)
+				{
+					beach3 = potentialBeaches.ElementAt(0).UnpackComponent(world, provinces);
+					if (beach3.Value.IsRiverNeighbor(world, beach1) || beach3.Value.IsRiverNeighbor(world, beach2))
+					{
+						beach3 = null;
+					}
+				}
+
+				if (potentialBeaches.Count == 2)
+				{
+					var chooseBeach = Rand.Get.Next(2);
+					if (chooseBeach == 0)
+					{
+						beach3 = potentialBeaches.ElementAt(0).UnpackComponent(world, provinces);
+						if (beach3.Value.IsRiverNeighbor(world, beach1) || beach3.Value.IsRiverNeighbor(world, beach2))
+						{
+							beach3 = potentialBeaches.ElementAt(1).UnpackComponent(world, provinces);
+						}
+					}
+					if (chooseBeach == 1)
+					{
+						beach3 = potentialBeaches.ElementAt(1).UnpackComponent(world, provinces);
+						if (beach3.Value.IsRiverNeighbor(world, beach1) || beach3.Value.IsRiverNeighbor(world, beach2))
+						{
+							beach3 = potentialBeaches.ElementAt(0).UnpackComponent(world, provinces);
+						}
+					}
+				}
+			}
+			if (logRivers)
+				Debug.Log($"{beach1}, {beach2}");
+
+			//meshes[beach1.Id][beach2.Id]
+
+
+			beach1.riverNeighbors.Add(beach2Entity);
+			var e = world.PackEntity(beach1Entity);
+			beach2.riverNeighbors.Add(e);
+
+			var chance = Rand.Get.Next(2);
+
+			if (beach3 == null)
+			{
+				if (logRivers)
+					Debug.Log($"----river stoped because cant find beach3");
+				return;
+			};
+			//font knpw how to convert. Entire system is ridiculous
+
+			//if (chance == 1 && !beach3.Value.IsRiverNeighbor(world, beach1))
+			//{
+			//	AddRiverBorder(beach3.Value, beach1);
+			//}
+			//else
+			//{
+			//	AddRiverBorder(beach3.Value, beach2);
+			//}
+		}
 		private MyTexture PrepareTexture(Texture2D mapImage)
 		{
 			MyTexture texture = null;

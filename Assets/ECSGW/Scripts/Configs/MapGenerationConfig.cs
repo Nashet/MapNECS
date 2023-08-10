@@ -13,5 +13,6 @@ namespace Nashet.Configs
 		public int lakeChance = 12;
 
 		public List<CellTypeConfig> AllowedCellTypes = new List<CellTypeConfig>();
+		public int maxRiversAmount = 3;
 	}
 }
